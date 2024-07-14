@@ -1,6 +1,6 @@
 {
   "name": "nuxt-php",
-  "version": "1.0.1",
+  "version": "1.0.2",
   "description": "Use PHP code inside your nuxt app",
   "repository": "MonoPT/Nuxt-php",
   "license": "MIT",
