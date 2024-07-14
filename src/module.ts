@@ -4,13 +4,13 @@ import {spawn } from "child_process";
 let fs = require("fs");
 let path = require("path");
 
-function ThroughDirectory(directory: string, files: string[]) {
+function ThroughDirectory(directory: string, files: string[], ends_with = ".html") {
   fs.readdirSync(directory).forEach(file => {
       const absolute = path.join(directory, file);
       if (fs.statSync(absolute).isDirectory()) {
-          ThroughDirectory(absolute, files); // Chamada recursiva para subdiretórios
+          ThroughDirectory(absolute, files, ends_with); // Chamada recursiva para subdiretórios
       } else {
-          if (absolute.endsWith(".html")) {
+          if (absolute.endsWith(ends_with)) {
               files.push(absolute); // Adiciona o arquivo .html ao array de arquivos
           }
       }
@@ -110,18 +110,32 @@ export default defineNuxtModule<ModuleOptions>({
         let php_bindings = JSON.parse(fs.readFileSync(path_php_bindings, {encoding: "utf-8"}));
 
         files.forEach(file => {
-            let data = fs.readFileSync(file,{ encoding: 'utf8' });
+          let data = fs.readFileSync(file,{ encoding: 'utf8' });
 
-            Object.keys(php_bindings).forEach(php_key => {
-                data = data.replaceAll(
-                    `<div phuuid="${php_key}"><div style="all:unset;"></div></div>`, 
-                    `<div phuuid="${php_key}"><div style="all:unset;">\n<?php ${php_bindings[php_key]} ?>\n</div></div>`);
-            });
+          Object.keys(php_bindings).forEach(php_key => {
+            data = data.replaceAll(
+              `<div phuuid="${php_key}"><div style="all:unset;"></div></div>`, 
+              `<div phuuid="${php_key}"><div style="all:unset;">\n<?php ${php_bindings[php_key]} ?>\n</div></div>`);
+          });
 
-
-            fs.writeFileSync(file.replace(".html", ".php"), data);
-            fs.unlinkSync(file);
+          fs.writeFileSync(file.replace(".html", ".php"), data);
+          fs.unlinkSync(file);
         });
+
+      let js_files = [];
+
+      ThroughDirectory(dir, js_files, ".js");
+
+      js_files.forEach(path => {
+        let script = fs.readFileSync(path,{ encoding: 'utf8' }) as string;
+
+        Object.keys(php_bindings).forEach(php_key => {
+          script = script.replace(php_bindings[php_key], "");
+        });
+
+        fs.writeFileSync(path, script);
+      });
+
     })
 
   },
